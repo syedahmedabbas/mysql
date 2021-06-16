@@ -1,20 +1,18 @@
 apiVersion: influxdata.com/v2alpha1
 kind: Label
 metadata:
+    name: mysql-template
+spec:
+    name: Mysql Template
+    color: '#7A65F2'
+---
+apiVersion: influxdata.com/v2alpha1
+kind: Label
+metadata:
     name: cranky-ramanujan-708001
 spec:
     color: '#326BBA'
     name: mysql
----
-apiVersion: influxdata.com/v2alpha1
-kind: Bucket
-metadata:
-    name: modest-elgamal-708005
-spec:
-    associations:
-      - kind: Label
-        name: cranky-ramanujan-708001
-    name: mariadb
 ---
 apiVersion: influxdata.com/v2alpha1
 kind: Variable
@@ -24,7 +22,7 @@ spec:
     name: bucket
     associations:
       - kind: Label
-        name: linux-system-template
+        name: mysql-template
     language: flux
     query: |-
         buckets()
@@ -36,12 +34,12 @@ spec:
 apiVersion: influxdata.com/v2alpha1
 kind: Variable
 metadata:
-    name: linux-host
+    name:  mysql-host
 spec:
-    name: linux_host
+    name:  mysql_host
     associations:
       - kind: Label
-        name: linux-system-template
+        name: mysql-template
     language: flux
     query: |-
         import "influxdata/influxdb/v1"
@@ -77,14 +75,15 @@ spec:
         geom: line
         height: 2
         kind: Xy
-        name: MySQL - MariaDB Connections
+        name: MySQL Connections
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "connections" or r["_field"] == "max_used_connections")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> derivative(unit: v.windowPeriod, nonNegative: false)
                   |> yield(name: "derivative")
         width: 4
@@ -114,10 +113,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "bytes_sent" or r["_field"] == "bytes_received")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> derivative(unit: v.windowPeriod, nonNegative: false)
                   |> yield(name: "derivative")
         width: 6
@@ -149,10 +149,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "select_full_join" or r["_field"] == "select_full_range_join" or r["_field"] == "select_range" or r["_field"] == "select_range_check" or r["_field"] == "select_scan")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> derivative(unit: v.windowPeriod, nonNegative: false)
                   |> yield(name: "derivative")
         width: 5
@@ -184,10 +185,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "handler_commit" or r["_field"] == "handler_delete" or r["_field"] == "handler_discover" or r["_field"] == "handler_read_key" or r["_field"] == "handler_read_rnd_next" or r["_field"] == "handler_write" or r["_field"] == "handler_update")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> derivative(unit: v.windowPeriod, nonNegative: false)
                   |> yield(name: "derivative")
         width: 6
@@ -218,10 +220,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "qcache_free_memory")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
         width: 6
         xCol: _time
         yCol: _value
@@ -246,14 +249,15 @@ spec:
         geom: line
         height: 2
         kind: Xy
-        name: MySQL - MariaDB Active Threads
+        name: MySQL Active Threads
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "threads_running" or r["_field"] == "threads_connected")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
         width: 5
         xCol: _time
         xPos: 4
@@ -283,10 +287,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "created_tmp_tables" or r["_field"] == "created_tmp_disk_tables" or r["_field"] == "created_tmp_files")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> derivative(unit: v.windowPeriod, nonNegative: false)
                   |> yield(name: "derivative")
         width: 5
@@ -319,10 +324,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "table_locks_waited" or r["_field"] == "table_locks_immediate")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
         width: 6
         xCol: _time
         xPos: 6
@@ -353,10 +359,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "com_insert" or r["_field"] == "com_update" or r["_field"] == "com_commit" or r["_field"] == "com_begin" or r["_field"] == "com_admin_commands" or r["_field"] == "com_show_status" or r["_field"] == "com_show_variables" or r["_field"] == "com_set_option")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> derivative(unit: v.windowPeriod, nonNegative: false)
                   |> yield(name: "derivative")
         width: 6
@@ -389,10 +396,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "qcache_hits" or r["_field"] == "qcache_inserts" or r["_field"] == "qcache_not_cached" or r["_field"] == "qcache_lowmem_prunes" or r["_field"] == "qcache_queries_in_cache")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
         width: 6
         xCol: _time
         xPos: 6
@@ -408,10 +416,11 @@ spec:
         name: Current MySQL Uptime
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "uptime")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
                   |> skew()
                   |> yield(name: "skew")
         suffix: ' Days'
@@ -427,10 +436,11 @@ spec:
         name: Current Queries
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "queries")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
         width: 3
         xPos: 9
         yPos: 1
@@ -459,10 +469,11 @@ spec:
         position: overlaid
         queries:
           - query: |-
-                from(bucket: "mariadb")
+                from(bucket: v.bucket)
                   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
                   |> filter(fn: (r) => r["_measurement"] == "mysql")
                   |> filter(fn: (r) => r["_field"] == "slow_queries")
+                  |> filter(fn: (r) => r.host == v.mysql_host)
         width: 2
         xCol: _time
         xPos: 10
